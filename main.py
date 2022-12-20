@@ -105,13 +105,20 @@ class NuevoListadoxls(ListadosAlamcenadosxls):
 
 class AsientoContable:
     def __init__(self):
-        file = find_file()
-        self.df_principal_raw = pd.read_excel(f'Listados2022\\file')
+        self.file = find_file()
+        self.df_principal_raw = pd.read_excel(f'Listados2022\\{self.file}')
         self.main_processed_df = self.df_principal_raw.loc[::,
                                  ['LEGAJO', 'APELLIDO', 'REGION', self.df_principal_raw.columns[-1]]]
+    def __str__(self):
+        return f"esta es una prueba para git nada mas brotha"
 
 
 if __name__ == '__main__':
+    asiento_ASSA = AsientoContable()
+    print(asiento_ASSA)
+
+
+    exit()
     listados_base = ListadosAlamcenadosxls()
     listados_nuevo_para_mergear = NuevoListadoxls()
     listados_nuevo_para_mergear.guardar_pandas_en_xlsx()
