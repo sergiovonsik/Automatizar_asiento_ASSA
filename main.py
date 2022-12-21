@@ -110,9 +110,10 @@ class AsientoContable:
         self.file = None
         self.excel_asiento_contable = openpyxl.load_workbook(f'AsientosContables\\Template Asiento.xlsx')
         self.template_asiento = self.excel_asiento_contable['ASIENTO']
+        self.aportes_de_listados = self.obtener_aportes_de_listados
 
     @property
-    def aportes_de_listados(self):
+    def obtener_aportes_de_listados(self):
         archivos_disponibles = [entry.name for entry in os.scandir() if entry.is_file()]
         file = pyip.inputChoice([*archivos_disponibles]) # 'Registro_ASSA_FEBRERO 2022.xlsx'  #
         df = pd.read_excel(f'{file}', sheet_name=0)
@@ -127,9 +128,16 @@ class AsientoContable:
             localidades[i] = 0
         return localidades
 
-    def suma_aportes_cada_region(self):
+    '''def suma_aportes_cada_region(self):
         grouped = self.aportes_de_listados.groupby('REGION')
         result = grouped[self.file].sum()  # -->'FEBRERO 2022'
+        aportes_por_localidad_dict = result.to_dict()
+        return aportes_por_localidad_dict'''
+
+    def suma_aportes_cada_region(self):
+        grouped = self.aportes_de_listados.groupby('REGION')
+        ultima_columna = self.aportes_de_listados.columns[-1]
+        result = grouped[ultima_columna].sum()
         aportes_por_localidad_dict = result.to_dict()
         return aportes_por_localidad_dict
 
@@ -141,7 +149,7 @@ class AsientoContable:
         print(self.template_asiento[f'C26'].value)
         self.template_asiento[f'C26'] = self.file
         print(self.template_asiento[f'C26'].value)
-        self.excel_asiento_contable.save(f'asiento_ASSA_mes_{self.file} .xlsx')
+        self.excel_asiento_contable.save(f'AsientosContables\\asiento_ASSA_mes_{self.file} .xlsx')
         print("***ARCHIVO GUARDADO***")
 
     def __str__(self):
@@ -149,9 +157,11 @@ class AsientoContable:
 
 
 if __name__ == '__main__':
-    asiento_ASSA = AsientoContable()
-    asiento_ASSA.cargar_aportes_en_el_asiento(asiento_ASSA.suma_aportes_cada_region())
-    exit()
-    listados_base = ListadosAlamcenadosxls()
-    listados_nuevo_para_mergear = NuevoListadoxls()
-    listados_nuevo_para_mergear.guardar_pandas_en_xlsx()
+    choice = pyip.inputChoice(["Cargar listado a padron", "Cargar asiento contable"])
+    if choice == "Cargar asiento contable":
+        asiento_ASSA = AsientoContable()
+        asiento_ASSA.cargar_aportes_en_el_asiento(asiento_ASSA.suma_aportes_cada_region())
+    else:
+        listados_base = ListadosAlamcenadosxls()
+        listados_nuevo_para_mergear = NuevoListadoxls()
+        listados_nuevo_para_mergear.guardar_pandas_en_xlsx()
