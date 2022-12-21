@@ -28,11 +28,10 @@ class ListadosAlamcenadosxls:
 
 class NuevoListadoxls(ListadosAlamcenadosxls):
     def __init__(self):
-        self.file = find_file().replace(".xls", "")
         super().__init__()
-
+        self.file = find_file().replace(".xls", "")
         self.df_for_merge_raw = pd.read_excel(f'Listados2022\\{self.file}.xls',
-                                              f'{self.simil_camel_case()}')  # -->'Cuota Febrero 2022')
+                                              f'{self.obtener_sheet_name()}')  # -->'Cuota Febrero 2022')
         self.listados_listos_para_procesar = self.df_for_merge_raw.iloc[4:-1, :].values
         self.df_listados_nuevos = self.sacar_sueldos_de_activos()
         self.df_central_ya_mergeado = self.mergear_registros()
@@ -43,7 +42,7 @@ class NuevoListadoxls(ListadosAlamcenadosxls):
         regiones_posibles = self.df_principal_raw['REGION'].unique()
         return regiones_posibles
 
-    def simil_camel_case(self):
+    def obtener_sheet_name(self):
         workbook = xlrd.open_workbook(f'Listados2022\\{self.file}.xls')
         sheet_names = workbook.sheet_names()
         return sheet_names[-2]
