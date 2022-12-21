@@ -1,5 +1,7 @@
 from pprint import pprint
 import os
+
+import openpyxl
 import xlrd
 import logging
 import pandas as pd
@@ -36,15 +38,15 @@ class NuevoListadoxls(ListadosAlamcenadosxls):
         self.df_central_ya_mergeado = self.mergear_registros()
         self.df_central_ya_mergeado = self.rellenar_datos_faltantes()
 
-    def simil_camel_case(self):
-        workbook = xlrd.open_workbook(f'Listados2022\\{self.file}.xls')
-        sheet_names = workbook.sheet_names()
-        return sheet_names[-2]
-
     @property
     def regiones_posibles(self):
         regiones_posibles = self.df_principal_raw['REGION'].unique()
         return regiones_posibles
+
+    def simil_camel_case(self):
+        workbook = xlrd.open_workbook(f'Listados2022\\{self.file}.xls')
+        sheet_names = workbook.sheet_names()
+        return sheet_names[-2]
 
     def verificar_regiones(self, str_region, sujeto):
         region = str_region.replace(" ", "").upper()
@@ -98,26 +100,57 @@ class NuevoListadoxls(ListadosAlamcenadosxls):
         return self.df_central_ya_mergeado
 
     def guardar_pandas_en_xlsx(self):
-        writer = pd.ExcelWriter(f'Registro_ASSA_{self.file}.xlsx', engine='xlsxwriter')
+        writer = pd.ExcelWriter(f'{self.file} PADRON_PYTHON_ASSA.xlsx', engine='xlsxwriter')
         self.df_central_ya_mergeado.to_excel(writer, sheet_name='Sheet1', index=False)
         writer.save()
 
 
 class AsientoContable:
     def __init__(self):
-        self.file = find_file()
-        self.df_principal_raw = pd.read_excel(f'Listados2022\\{self.file}')
-        self.main_processed_df = self.df_principal_raw.loc[::,
-                                 ['LEGAJO', 'APELLIDO', 'REGION', self.df_principal_raw.columns[-1]]]
+        self.file = None
+        self.excel_asiento_contable = openpyxl.load_workbook(f'AsientosContables\\Template Asiento.xlsx')
+        self.template_asiento = self.excel_asiento_contable['ASIENTO']
+
+    @property
+    def aportes_de_listados(self):
+        archivos_disponibles = [entry.name for entry in os.scandir() if entry.is_file()]
+        file = pyip.inputChoice([*archivos_disponibles]) # 'Registro_ASSA_FEBRERO 2022.xlsx'  #
+        df = pd.read_excel(f'{file}', sheet_name=0)
+        self.file = file.replace(" PADRON_PYTHON_ASSA.xlsx", "")
+        return df.iloc[::, [2, -1]]
+
+    @property
+    def regiones(self):
+        columna_regiones = self.aportes_de_listados['REGION'].unique()
+        localidades = dict()
+        for i in columna_regiones:
+            localidades[i] = 0
+        return localidades
+
+    def suma_aportes_cada_region(self):
+        grouped = self.aportes_de_listados.groupby('REGION')
+        result = grouped[self.file].sum()  # -->'FEBRERO 2022'
+        aportes_por_localidad_dict = result.to_dict()
+        return aportes_por_localidad_dict
+
+    def cargar_aportes_en_el_asiento(self, hash_table):
+        for i in range(9, 21):
+            print(self.template_asiento[f'D{i}'].value)
+            self.template_asiento[f'D{i}'] = hash_table[self.template_asiento[f'D{i}'].value]
+            print(self.template_asiento[f'D{i}'].value)
+        print(self.template_asiento[f'C26'].value)
+        self.template_asiento[f'C26'] = self.file
+        print(self.template_asiento[f'C26'].value)
+        self.excel_asiento_contable.save(f'asiento_ASSA_mes_{self.file} .xlsx')
+        print("***ARCHIVO GUARDADO***")
+
     def __str__(self):
-        return f"esta es una prueba para git nada mas brotha"
+        return f"{self.regiones}"
 
 
 if __name__ == '__main__':
     asiento_ASSA = AsientoContable()
-    print(asiento_ASSA)
-
-
+    asiento_ASSA.cargar_aportes_en_el_asiento(asiento_ASSA.suma_aportes_cada_region())
     exit()
     listados_base = ListadosAlamcenadosxls()
     listados_nuevo_para_mergear = NuevoListadoxls()
