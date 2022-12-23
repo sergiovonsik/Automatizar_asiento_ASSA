@@ -1,12 +1,12 @@
 from pprint import pprint
 import os
-
 import openpyxl
 import xlrd
 import logging
 import pandas as pd
 import xlsxwriter
 import pyinputplus as pyip
+from win32com import client
 
 
 def find_file():
@@ -88,8 +88,7 @@ class NuevoListadoxls(ListadosAlamcenadosxls):
 
         for i, row in self.df_central_ya_mergeado.iterrows():
 
-            if self.df_central_ya_mergeado.isnull().loc[i, "APELLIDO"] or self.df_central_ya_mergeado.isnull().loc[
-                i, "REGION"]:
+            if self.df_central_ya_mergeado.isnull().loc[i, "APELLIDO"] or self.df_central_ya_mergeado.isnull().loc[i, "REGION"]:
                 data_para_transferir = df_padron_completo.loc[
                     df_padron_completo['LEGAJO'] == row["LEGAJO"], ["APELLIDO", "REGION"]]
                 self.df_central_ya_mergeado.loc[i, "APELLIDO"] = data_para_transferir.values[0][0]
@@ -114,7 +113,7 @@ class AsientoContable:
     @property
     def obtener_aportes_de_listados(self):
         archivos_disponibles = [entry.name for entry in os.scandir() if entry.is_file()]
-        file = pyip.inputChoice([*archivos_disponibles]) # 'Registro_ASSA_FEBRERO 2022.xlsx'  #
+        file = pyip.inputChoice([*archivos_disponibles])  # 'Registro_ASSA_FEBRERO 2022.xlsx'  #
         df = pd.read_excel(f'{file}', sheet_name=0)
         self.file = file.replace(" PADRON_PYTHON_ASSA.xlsx", "")
         return df.iloc[::, [2, -1]]
@@ -126,13 +125,6 @@ class AsientoContable:
         for i in columna_regiones:
             localidades[i] = 0
         return localidades
-
-    '''def suma_aportes_cada_region(self):
-        grouped = self.aportes_de_listados.groupby('REGION')
-        result = grouped[self.file].sum()  # -->'FEBRERO 2022'
-        aportes_por_localidad_dict = result.to_dict()
-        return aportes_por_localidad_dict'''
-
     def suma_aportes_cada_region(self):
         grouped = self.aportes_de_listados.groupby('REGION')
         ultima_columna = self.aportes_de_listados.columns[-1]
@@ -151,8 +143,21 @@ class AsientoContable:
         self.excel_asiento_contable.save(f'AsientosContables\\asiento_ASSA_mes_{self.file} .xlsx')
         print("***ARCHIVO GUARDADO***")
 
-    def __str__(self):
-        return f"{self.regiones}"
+
+    def guardar_excel_en_pdf(self):
+
+        # Open Microsoft Excel
+        excel = client.Dispatch('Excel.Application')
+
+        # Read Excel File
+        sheets = excel.Workbooks.Open(f"C:\\Users\\Sergio Nicolas\\PycharmProjects\\pythonProject\AsientosContables"
+                                      f"\\asiento_ASSA_mes_{self.file} .xlsx")
+        work_sheets = sheets.Worksheets[0]
+
+        # Convert into PDF File
+        work_sheets.ExportAsFixedFormat(0, f"C:\\Users\\Sergio Nicolas\\PycharmProjects\\pythonProject\AsientosContables"
+                                      f"\\PDF_para_imprimir{self.file}")
+
 
 
 if __name__ == '__main__':
@@ -160,6 +165,7 @@ if __name__ == '__main__':
     if choice == "Cargar asiento contable":
         asiento_ASSA = AsientoContable()
         asiento_ASSA.cargar_aportes_en_el_asiento(asiento_ASSA.suma_aportes_cada_region())
+        asiento_ASSA.guardar_excel_en_pdf()
     else:
         listados_base = ListadosAlamcenadosxls()
         listados_nuevo_para_mergear = NuevoListadoxls()
