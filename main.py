@@ -17,7 +17,7 @@ def find_file():
 class ListadosAlamcenadosxls:
     def __init__(self):
         # file = find_file()
-        self.df_principal_raw = pd.read_excel(f'Listados2022\\ASSATotalDeMeses.xls')
+        self.df_principal_raw = pd.read_excel(f'Listados2022\\ASSATotalDeMeses.xlsx')
         self.main_processed_df = self.df_principal_raw.loc[::,
                                  ['LEGAJO', 'APELLIDO', 'REGION', self.df_principal_raw.columns[-1]]]
 
@@ -29,8 +29,9 @@ class ListadosAlamcenadosxls:
 class NuevoListadoxls(ListadosAlamcenadosxls):
     def __init__(self):
         super().__init__()
-        self.file = find_file().replace(".xls", "")
-        self.df_for_merge_raw = pd.read_excel(f'Listados2022\\{self.file}.xls',
+        self.file = find_file()
+        self.file_name = self.file.replace(".xls", "")
+        self.df_for_merge_raw = pd.read_excel(f'Listados2022\\{self.file}',
                                               f'{self.obtener_sheet_name()}')  # -->'Cuota Febrero 2022')
         self.listados_listos_para_procesar = self.df_for_merge_raw.iloc[4:-1, :].values
         self.df_listados_nuevos = self.sacar_sueldos_de_activos()
@@ -43,7 +44,7 @@ class NuevoListadoxls(ListadosAlamcenadosxls):
         return regiones_posibles
 
     def obtener_sheet_name(self):
-        workbook = xlrd.open_workbook(f'Listados2022\\{self.file}.xls')
+        workbook = xlrd.open_workbook(f'Listados2022\\{self.file}')
         sheet_names = workbook.sheet_names()
         return sheet_names[-2]
 
@@ -68,7 +69,7 @@ class NuevoListadoxls(ListadosAlamcenadosxls):
                 print(f"NUEVITOS: {legajo, apellido, sueldo}")
 
         df_padron_completo = pd.DataFrame(sueldos_personal_registrado,
-                                          columns=["LEGAJO", self.file])  # ->"FEBRERO 2022"
+                                          columns=["LEGAJO", self.file_name])  # ->"FEBRERO 2022"
         return df_padron_completo
 
     def mergear_registros(self):
@@ -98,14 +99,14 @@ class NuevoListadoxls(ListadosAlamcenadosxls):
         return self.df_central_ya_mergeado
 
     def guardar_pandas_en_xlsx(self):
-        writer = pd.ExcelWriter(f'{self.file} PADRON_PYTHON_ASSA.xlsx', engine='xlsxwriter')
+        writer = pd.ExcelWriter(f'{self.file_name} PADRON_PYTHON_ASSA.xlsx', engine='xlsxwriter')
         self.df_central_ya_mergeado.to_excel(writer, sheet_name='Sheet1', index=False)
         writer.save()
 
 
 class AsientoContable:
     def __init__(self):
-        self.file = None
+        self.file_name = None
         self.excel_asiento_contable = openpyxl.load_workbook(f'AsientosContables\\Template Asiento.xlsx')
         self.template_asiento = self.excel_asiento_contable['ASIENTO']
         self.aportes_de_listados = self.obtener_aportes_de_listados
@@ -115,7 +116,7 @@ class AsientoContable:
         archivos_disponibles = [entry.name for entry in os.scandir() if entry.is_file()]
         file = pyip.inputChoice([*archivos_disponibles])  # 'Registro_ASSA_FEBRERO 2022.xlsx'  #
         df = pd.read_excel(f'{file}', sheet_name=0)
-        self.file = file.replace(" PADRON_PYTHON_ASSA.xlsx", "")
+        self.file_name = ' '.join(file.split()[:2])
         return df.iloc[::, [2, -1]]
 
     @property
@@ -138,9 +139,9 @@ class AsientoContable:
             self.template_asiento[f'D{i}'] = hash_table[self.template_asiento[f'D{i}'].value]
             print(self.template_asiento[f'D{i}'].value)
         print(self.template_asiento[f'C26'].value)
-        self.template_asiento[f'C26'] = self.file
+        self.template_asiento[f'C26'] = self.file_name
         print(self.template_asiento[f'C26'].value)
-        self.excel_asiento_contable.save(f'AsientosContables\\asiento_ASSA_mes_{self.file} .xlsx')
+        self.excel_asiento_contable.save(f'AsientosContables\\asiento_ASSA_mes_{self.file_name} .xlsx')
         print("***ARCHIVO GUARDADO***")
 
 
@@ -151,12 +152,12 @@ class AsientoContable:
 
         # Read Excel File
         sheets = excel.Workbooks.Open(f"C:\\Users\\Sergio Nicolas\\PycharmProjects\\pythonProject\AsientosContables"
-                                      f"\\asiento_ASSA_mes_{self.file} .xlsx")
+                                      f"\\asiento_ASSA_mes_{self.file_name} .xlsx")
         work_sheets = sheets.Worksheets[0]
 
         # Convert into PDF File
         work_sheets.ExportAsFixedFormat(0, f"C:\\Users\\Sergio Nicolas\\PycharmProjects\\pythonProject\AsientosContables"
-                                      f"\\PDF_para_imprimir{self.file}")
+                                      f"\\PDF_para_imprimir{self.file_name}")
 
 
 
