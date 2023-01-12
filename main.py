@@ -1,10 +1,11 @@
+import copy
 from pprint import pprint
 import os
 import openpyxl
 import xlrd
 import logging
-import pandas as pd
 import xlsxwriter
+import pandas as pd
 import pyinputplus as pyip
 from win32com import client
 
@@ -40,13 +41,18 @@ class NuevoListadoxls(ListadosAlamcenadosxls):
 
     @property
     def regiones_posibles(self):
-        regiones_posibles = self.df_principal_raw['REGION'].unique()
+        regiones_posibles_df = self.df_principal_raw['REGION'].unique()
+        regiones_posibles = list()
+        for i in regiones_posibles_df:
+            if type(i) == str:
+                regiones_posibles.append(i)
         return regiones_posibles
 
     def obtener_sheet_name(self):
         workbook = xlrd.open_workbook(f'Listados2022\\{self.file}')
         sheet_names = workbook.sheet_names()
-        return sheet_names[-2]
+        pprint(workbook.sheet_names())
+        return input()
 
     def verificar_regiones(self, str_region, sujeto):
         region = str_region.replace(" ", "").upper()
@@ -92,9 +98,15 @@ class NuevoListadoxls(ListadosAlamcenadosxls):
             if self.df_central_ya_mergeado.isnull().loc[i, "APELLIDO"] or self.df_central_ya_mergeado.isnull().loc[i, "REGION"]:
                 data_para_transferir = df_padron_completo.loc[
                     df_padron_completo['LEGAJO'] == row["LEGAJO"], ["APELLIDO", "REGION"]]
-                self.df_central_ya_mergeado.loc[i, "APELLIDO"] = data_para_transferir.values[0][0]
-                self.df_central_ya_mergeado.loc[i, "REGION"] = self.verificar_regiones(
-                    data_para_transferir.values[0][1], data_para_transferir.values[0][0])
+                try:
+                    self.df_central_ya_mergeado.loc[i, "APELLIDO"] = data_para_transferir.values[0][0]
+                    self.df_central_ya_mergeado.loc[i, "REGION"] = self.verificar_regiones(
+                        data_para_transferir.values[0][1], data_para_transferir.values[0][0])
+                except IndexError:
+                    print("OCURRIO UN ERROR, NO SE ENCONTRO AL SUJETO INDEXADO EN 'PADRON ASSA'")
+                    print(data_para_transferir)
+                    print(self.df_central_ya_mergeado.loc[i])
+                    self.df_central_ya_mergeado.loc[i, "REGION"] = pyip.inputChoice([*self.regiones_posibles])
 
         return self.df_central_ya_mergeado
 
@@ -117,7 +129,7 @@ class AsientoContable:
         file = pyip.inputChoice([*archivos_disponibles])  # 'Registro_ASSA_FEBRERO 2022.xlsx'  #
         df = pd.read_excel(f'{file}', sheet_name=0)
         self.file_name = ' '.join(file.split()[:2])
-        return df.iloc[::, [2, -1]]
+        return df.iloc[::, [4, -1]]
 
     @property
     def regiones(self):
@@ -151,12 +163,12 @@ class AsientoContable:
         excel = client.Dispatch('Excel.Application')
 
         # Read Excel File
-        sheets = excel.Workbooks.Open(f"C:\\Users\\Sergio Nicolas\\PycharmProjects\\pythonProject\AsientosContables"
+        sheets = excel.Workbooks.Open(r"C:\Users\Ariadna\Desktop\Automatizar_trabajo-Asiento_contable_prueba\AsientosContables"
                                       f"\\asiento_ASSA_mes_{self.file_name} .xlsx")
         work_sheets = sheets.Worksheets[0]
 
         # Convert into PDF File
-        work_sheets.ExportAsFixedFormat(0, f"C:\\Users\\Sergio Nicolas\\PycharmProjects\\pythonProject\AsientosContables"
+        work_sheets.ExportAsFixedFormat(0, r"C:\Users\Ariadna\Desktop\Automatizar_trabajo-Asiento_contable_prueba\AsientosContables"
                                       f"\\PDF_para_imprimir{self.file_name}")
 
 
