@@ -174,8 +174,8 @@ class AsientoContable:
 
 
 if __name__ == '__main__':
-    choice = pyip.inputChoice(["Cargar listado a padron", "Cargar asiento contable"])
-    if choice == "Cargar asiento contable":
+    choice = pyip.inputChoice(["Mergear_listado_a_Padron", "Crear_asiento_contable"])
+    if choice == "Crear_asiento_contable":
         asiento_ASSA = AsientoContable()
         asiento_ASSA.cargar_aportes_en_el_asiento(asiento_ASSA.suma_aportes_cada_region())
         asiento_ASSA.guardar_excel_en_pdf()
