@@ -11,14 +11,14 @@ from win32com import client
 
 
 def find_file():
-    archivos_disponibles = [entry.name for entry in os.scandir('Listados2022') if entry.is_file()]
+    archivos_disponibles = [entry.name for entry in os.scandir('listadosNuevos') if entry.is_file()]
     return pyip.inputChoice([*archivos_disponibles])
 
 
 class ListadosAlamcenadosxls:
     def __init__(self):
         # file = find_file()
-        self.df_principal_raw = pd.read_excel(f'Listados2022\\ASSATotalDeMeses.xlsx')
+        self.df_principal_raw = pd.read_excel(f'extraerData\\ASSATotalDeMeses.xlsx')
         self.main_processed_df = self.df_principal_raw.loc[::,
                                  ['LEGAJO', 'APELLIDO', 'REGION', self.df_principal_raw.columns[-1]]]
 
@@ -32,7 +32,7 @@ class NuevoListadoxls(ListadosAlamcenadosxls):
         super().__init__()
         self.file = find_file()
         self.file_name = self.file.replace(".xls", "")
-        self.df_for_merge_raw = pd.read_excel(f'Listados2022\\{self.file}',
+        self.df_for_merge_raw = pd.read_excel(f'listadosNuevos\\{self.file}',
                                               f'{self.obtener_sheet_name()}')  # -->'Cuota Febrero 2022')
         self.listados_listos_para_procesar = self.df_for_merge_raw.iloc[4:-1, :].values
         self.df_listados_nuevos = self.sacar_sueldos_de_activos()
@@ -49,7 +49,7 @@ class NuevoListadoxls(ListadosAlamcenadosxls):
         return regiones_posibles
 
     def obtener_sheet_name(self):
-        workbook = xlrd.open_workbook(f'Listados2022\\{self.file}')
+        workbook = xlrd.open_workbook(f'listadosNuevos\\{self.file}')
         sheet_names = workbook.sheet_names()
         pprint(workbook.sheet_names())
         return input()
@@ -83,7 +83,7 @@ class NuevoListadoxls(ListadosAlamcenadosxls):
         return dataframe_para_guardar
 
     def rellenar_datos_faltantes(self):
-        padron_con_datos_raw = pd.read_excel(f'Listados2022\\PADRON ASSA.xls')
+        padron_con_datos_raw = pd.read_excel(f'extraerData\\PADRON ASSA.xls')
         padron_con_datos_procesados = padron_con_datos_raw.loc[::, ['Legajo', 'Apellido y Nombre', 'Ubicación']]
         listado_activos_apellido_regiones = list()
         for legajo, apellido, region in padron_con_datos_procesados.values:
@@ -111,7 +111,7 @@ class NuevoListadoxls(ListadosAlamcenadosxls):
         return self.df_central_ya_mergeado
 
     def guardar_pandas_en_xlsx(self):
-        writer = pd.ExcelWriter(f'{self.file_name} PADRON_PYTHON_ASSA.xlsx', engine='xlsxwriter')
+        writer = pd.ExcelWriter(f'padronesNuevos\\{self.file_name} PADRON_PYTHON_ASSA.xlsx', engine='xlsxwriter')
         self.df_central_ya_mergeado.to_excel(writer, sheet_name='Sheet1', index=False)
         writer.save()
 
@@ -163,13 +163,11 @@ class AsientoContable:
         excel = client.Dispatch('Excel.Application')
 
         # Read Excel File
-        sheets = excel.Workbooks.Open(r"C:\Users\Ariadna\Desktop\Automatizar_trabajo-Asiento_contable_prueba\AsientosContables"
-                                      f"\\asiento_ASSA_mes_{self.file_name} .xlsx")
+        sheets = excel.Workbooks.Open(f"\AsientosContables\\asiento_ASSA_mes_{self.file_name} .xlsx")
         work_sheets = sheets.Worksheets[0]
 
         # Convert into PDF File
-        work_sheets.ExportAsFixedFormat(0, r"C:\Users\Ariadna\Desktop\Automatizar_trabajo-Asiento_contable_prueba\AsientosContables"
-                                      f"\\PDF_para_imprimir{self.file_name}")
+        work_sheets.ExportAsFixedFormat(0, f"\AsientosContables\\PDF_para_imprimir{self.file_name}")
 
 
 
