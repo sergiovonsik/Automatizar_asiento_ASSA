@@ -10,7 +10,7 @@ import pyinputplus as pyip
 from win32com import client
 
 def find_file():
-    archivos_disponibles = [entry.name for entry in os.scandir('../listadosNuevos') if entry.is_file()]
+    archivos_disponibles = [entry.name for entry in os.scandir('.\\listadosNuevos') if entry.is_file()]
     return pyip.inputChoice([*archivos_disponibles])
 
 
@@ -33,7 +33,7 @@ class NuevoListadoxls(ListadosAlamcenadosxls):
         self.file_name = self.file.replace(".xls", "")
         self.df_for_merge_raw = pd.read_excel(f'listadosNuevos\\{self.file}',
                                               f'{self.obtener_sheet_name()}')  # -->'Cuota Febrero 2022')
-        self.listados_listos_para_procesar = self.df_for_merge_raw.iloc[4:-1, :].values
+        self.listados_listos_para_procesar = self.df_for_merge_raw.iloc[:-1, :].values
         self.df_listados_nuevos = self.sacar_sueldos_de_activos()
         self.df_central_ya_mergeado = self.mergear_registros()
         self.df_central_ya_mergeado = self.rellenar_datos_faltantes()
@@ -118,13 +118,13 @@ class NuevoListadoxls(ListadosAlamcenadosxls):
 class AsientoContable:
     def __init__(self):
         self.file_name = None
-        self.excel_asiento_contable = openpyxl.load_workbook(f'../extraerData/Template Asiento.xlsx')
+        self.excel_asiento_contable = openpyxl.load_workbook(f'./extraerData/Template Asiento.xlsx')
         self.template_asiento = self.excel_asiento_contable['ASIENTO']
         self.aportes_de_listados = self.obtener_aportes_de_listados
 
     @property
     def obtener_aportes_de_listados(self):
-        archivos_disponibles = [entry.name for entry in os.scandir('../padronesNuevos') if entry.is_file()]
+        archivos_disponibles = [entry.name for entry in os.scandir('./padronesNuevos') if entry.is_file()]
         file = pyip.inputChoice([*archivos_disponibles])  # 'Registro_ASSA_FEBRERO 2022.xlsx'  #
         df = pd.read_excel(f'padronesNuevos\\{file}', sheet_name=0)
         self.file_name = ' '.join(file.split()[:2])
@@ -157,7 +157,7 @@ class AsientoContable:
 
 
     def guardar_excel_en_pdf(self):
-
+        exit()
         # Open Microsoft Excel
         excel = client.Dispatch('Excel.Application')
 
